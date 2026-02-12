@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INU GEN </title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff9f43;
+            --primary-dark: #ee5253;
+            --accent: #feca57;
+            --dark: #2d3436;
+            --light: #fff2cc;
+            /* Softer cream */
+            --white: #ffffff;
+            --gray: #dfe6e9;
+            --gray-dark: #b2bec3;
+            --shadow-soft: 0 10px 40px rgba(255, 159, 67, 0.15);
+            --shadow-card: 0 15px 35px rgba(0, 0, 0, 0.1);
+            --radius: 28px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fffcf2 0%, #fff7d6 100%);
+            color: var(--dark);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- LEFT SIDE: CANVAS PREVIEW --- */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+            overflow: hidden;
+            /* containment for pseudo-bg */
+            z-index: 1;
+            background-color: #fcec8c;
+        }
+
+        /* Diagonal/Tilted Pattern Background */
+        .preview-section::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: url('2.png');
+            background-repeat: repeat;
+            background-size: 80px 80px;
+            /* Adjust size/density */
+            transform: rotate(-25deg);
+            z-index: -1;
+            /* Removed opacity to fix color issue */
+        }
+
+        .header-floating {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--dark);
+            line-height: 1;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        h1 span {
+            color: #000000;
+            display: inline-block;
+            /* Removed rotation */
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #636e72;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .canvas-card {
+            background: var(--white);
+            padding: 15px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            width: 480px;
+            height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 8px solid var(--white);
+            /* Thick photo border */
+            position: relative;
+            margin-top: 60px;
+            /* Pushes image down from text */
+        }
+
+        .canvas-card::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 32px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+            background-color: #f1f2f6;
+            /* Neutral canvas bg */
+        }
+
+        /* ACTIONS */
+        .action-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 35px;
+            z-index: 10;
+        }
+
+        .action-btn-large {
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-btn-large:hover {
+            transform: translateY(-3px);
+        }
+
+        .action-btn-large:active {
+            transform: translateY(1px);
+        }
+
+        .btn-random-large {
+            background: var(--white);
+            color: var(--dark);
+            border: 2px solid var(--gray);
+        }
+
+        .btn-random-large:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-save-large {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-save-large:hover {
+            box-shadow: 0 10px 25px rgba(238, 82, 83, 0.4);
+        }
+
+        /* --- RIGHT SIDE: CONTROLS SIDEBAR --- */
+        .sidebar {
+            width: 450px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.03);
+            z-index: 20;
+        }
+
+        .sidebar-header {
+            padding: 30px 25px 20px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        /* TABS */
+        .tabs-container {
+            padding: 20px 25px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        .tab-btn {
+            padding: 10px 18px;
+            background: #f1f2f6;
+            border: none;
+            border-radius: 12px;
+            color: #636e72;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .tab-btn:hover {
+            background: #dfe6e9;
+            color: var(--dark);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 159, 67, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* GRID */
+        .assets-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 25px 30px;
+        }
+
+        /* Custom scrollbar for assets */
+        .assets-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .assets-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .assets-wrapper::-webkit-scrollbar-thumb {
+            background: #dfe6e9;
+            border-radius: 10px;
+        }
+
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            /* Fixed 3 columns */
+            gap: 15px;
+        }
+
+        .asset-item {
+            aspect-ratio: 1;
+            background: var(--white);
+            border-radius: 18px;
+            border: 2px solid var(--gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .asset-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .asset-item img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            transition: transform 0.3s;
+        }
+
+        .asset-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .asset-item.selected {
+            border-color: var(--primary);
+            background: #fffcf5;
+            box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.2);
+        }
+
+        /* Checkmark badge for selected */
+        .asset-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--primary);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .none-option {
+            color: var(--gray-dark);
+            font-size: 1.5rem;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                overflow: auto;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+                box-shadow: none;
+                border: none;
+                padding-bottom: 40px;
+            }
+
+            .preview-section {
+                padding: 40px 20px;
+                min-height: 60vh;
+            }
+
+            .canvas-card {
+                width: 90%;
+                max-width: 400px;
+                height: auto;
+                aspect-ratio: 1;
+            }
+
+            .header-floating {
+                position: relative;
+                top: 0;
+                left: 0;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .assets-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Left: Canvas Area -->
+    <div class="preview-section">
+        <div class="header-floating">
+            <h1>INU <span>GENERATOR</span></h1>
+            <div class="subtitle"> </div>
+        </div>
+
+        <div class="canvas-card">
+            <canvas id="avatarCanvas" width="1000" height="1000"></canvas>
+        </div>
+
+        <!-- Moved Action Buttons -->
+        <div class="action-bar">
+            <button class="action-btn-large btn-random-large" onclick="randomize()">
+                <span>🎲</span> Random
+            </button>
+            <button class="action-btn-large btn-save-large" onclick="downloadImage()">
+                <span>🦴</span> Save Image
+            </button>
+        </div>
+    </div>
+
+    <!-- Right: Sidebar Controls -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>Customize</h3>
+            <!-- Actions moved from here -->
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs" id="categoryTabs">
+                <!-- JS Injected -->
+            </div>
+        </div>
+
+        <div class="assets-wrapper">
+            <div class="assets-grid" id="assetGrid">
+                <!-- JS Injected -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA CONFIGURATION ---
+        // تم تغيير الأسماء إلى أسماء وهمية كما طلبت
+        // تم إضافة قسم الخلفيات Backgrounds
+        const categories = {
+            background: {
+                label: "Background",
+                required: false,
+                items: [
+                    "pfp%20inu/Background/1.png",
+                    "pfp%20inu/Background/2.png",
+                    "pfp%20inu/Background/3.png",
+                    "pfp%20inu/Background/4.png",
+                    "pfp%20inu/Background/5.png",
+                    "pfp%20inu/Background/6.png",
+                    "pfp%20inu/Background/7.png"
+                ]
+            },
+            "other back": {
+                label: "Other Back",
+                required: false,
+                items: [
+                    "pfp%20inu/other%20back/Untitled1124_20260212160700.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160706.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160711.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160715.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160718.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160722.png",
+                    "pfp%20inu/other%20back/Untitled1124_20260212160725.png"
+                ]
+            },
+            body: {
+                label: "Body",
+                required: true,
+                items: [
+                    "pfp%20inu/body/Untitled1124_20260212160638.png"
+                ]
+            },
+            "neck&tattoes": {
+                label: "Neck & Tattoos",
+                required: false,
+                items: [
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160521.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160526.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160531.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160535.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160539.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160543.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160547.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160550.png",
+                    "pfp%20inu/neck%26tattoes/Untitled1124_20260212160554.png"
+                ]
+            },
+            mouth: {
+                label: "Mouth",
+                required: false,
+                items: [
+                    "pfp%20inu/mouth/Untitled1124_20260212160407.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160411.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160415.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160420.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160424.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160428.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160434.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160438.png",
+                    "pfp%20inu/mouth/Untitled1124_20260212160441.png"
+                ]
+            },
+            eyeglass: {
+                label: "Eyeglass",
+                required: true,
+                items: [
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160055.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160059.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160103.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160111.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160115.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160119.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160123.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160127.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160134.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160149.png",
+                    "pfp%20inu/eyeglass/Untitled1124_20260212160153.png"
+                ]
+            },
+            hat: {
+                label: "Hat",
+                required: false,
+                items: [
+                    "pfp%20inu/hat/Untitled1124_20260212160236.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160239.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160245.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160248.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160252.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160257.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160300.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160305.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160309.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160314.png",
+                    "pfp%20inu/hat/Untitled1124_20260212160319.png"
+                ]
+            }
+        };
+
+        // Z-Index Order (Drawing Order: Back to Front)
+        const layerOrder = ['background', 'other back', 'body', 'neck&tattoes', 'mouth', 'eyeglass', 'hat'];
+
+        // UI Tabs Order (User Specified: Front to Back)
+        const uiOrder = ['hat', 'eyeglass', 'mouth', 'neck&tattoes', 'body', 'other back', 'background'];
+
+        const currentSelection = {
+            background: null,
+            "other back": null,
+            "body": 0,
+            "neck&tattoes": null,
+            "mouth": null,
+            "eyeglass": null,
+            "hat": null
+        };
+
+        // Start tab should strictly be the first one in the UI order
+        let currentTab = uiOrder[0];
+
+        // --- DOM ELEMENTS ---
+        const canvas = document.getElementById('avatarCanvas');
+        const ctx = canvas.getContext('2d');
+        const tabsContainer = document.getElementById('categoryTabs');
+        const gridContainer = document.getElementById('assetGrid');
+
+        // --- INITIALIZATION ---
+        function init() {
+            createTabs();
+            renderGrid(currentTab);
+            // Wait for fonts/DOM then draw
+            setTimeout(drawAvatar, 100);
+        }
+
+        // --- DRAWING LOGIC ---
+        function drawAvatar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Neutral Gray Background on the canvas itself (Inu Theme)
+            ctx.fillStyle = "#b2bec3";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let p = Promise.resolve();
+            // Always draw in layerOrder (Back to Front)
+            layerOrder.forEach(categoryKey => {
+                p = p.then(() => {
+                    return new Promise((resolve) => {
+                        const selectedIndex = currentSelection[categoryKey];
+                        if (selectedIndex === null) return resolve();
+
+                        const imgPath = categories[categoryKey].items[selectedIndex];
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            resolve();
+                        };
+                        img.onerror = resolve;
+                        img.src = imgPath;
+                    });
+                });
+            });
+        }
+
+        // --- UI GENERATION ---
+        function createTabs() {
+            tabsContainer.innerHTML = '';
+            // Use uiOrder for the visual tabs
+            uiOrder.forEach(key => {
+                const cat = categories[key];
+                const btn = document.createElement('button');
+                btn.className = `tab-btn ${key === currentTab ? 'active' : ''}`;
+                btn.innerText = cat.label;
+                btn.onclick = () => switchTab(key);
+                tabsContainer.appendChild(btn);
+            });
+        }
+
+        function switchTab(key) {
+            currentTab = key;
+            // Update UI classes
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const buttons = Array.from(document.querySelectorAll('.tab-btn'));
+            const activeBtn = buttons.find(b => b.innerText === categories[key].label);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            renderGrid(key);
+        }
+
+        function renderGrid(categoryKey) {
+            gridContainer.innerHTML = '';
+            const category = categories[categoryKey];
+
+            // Add "None" option if not required
+            if (!category.required) {
+                const noneDiv = document.createElement('div');
+                noneDiv.className = `asset-item none-option ${currentSelection[categoryKey] === null ? 'selected' : ''}`;
+                noneDiv.innerText = "✖";
+                noneDiv.onclick = () => selectItem(categoryKey, null);
+                gridContainer.appendChild(noneDiv);
+            }
+
+            // Add items
+            category.items.forEach((src, index) => {
+                const div = document.createElement('div');
+                div.className = `asset-item ${currentSelection[categoryKey] === index ? 'selected' : ''}`;
+
+                const img = document.createElement('img');
+                img.src = src;
+
+                div.appendChild(img);
+                div.onclick = () => selectItem(categoryKey, index);
+                gridContainer.appendChild(div);
+            });
+        }
+
+        function selectItem(category, index) {
+            currentSelection[category] = index;
+            renderGrid(category);
+            drawAvatar();
+        }
+
+        function randomize() {
+            layerOrder.forEach(key => {
+                const items = categories[key].items;
+                const isRequired = categories[key].required;
+
+                // 30% chance to be empty if not required
+                if (!isRequired && Math.random() < 0.3) {
+                    currentSelection[key] = null;
+                } else {
+                    const randomIndex = Math.floor(Math.random() * items.length);
+                    currentSelection[key] = randomIndex;
+                }
+            });
+            renderGrid(currentTab);
+            drawAvatar();
+        }
+
+        function downloadImage() {
+            try {
+                const link = document.createElement('a');
+                link.download = 'INU-pfp.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (e) {
+                alert("Please open this file with a local server (like Live Server in VS Code) to enable downloading. The images work but downloading requires a server due to browser security.");
+                console.error("Download error:", e);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
